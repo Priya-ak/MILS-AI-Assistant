@@ -1,18 +1,27 @@
 @echo off
 
-echo Starting MILS AI Assistant...
+echo ================================
+echo Starting MILS AI Assistant
+echo ================================
+
+cd /d %~dp0
+
+echo Checking virtual environment...
+
+IF NOT EXIST venv (
+    echo Creating virtual environment...
+    python -m venv venv
+)
 
 call venv\Scripts\activate
 
-echo Starting AI Camera System...
-start cmd /k python main.py
+echo Installing dependencies...
+pip install -r requirements.txt
 
 echo Starting Web Server...
-start cmd /k python web_app.py
 
-timeout /t 5
-
-echo Opening Dashboard...
 start http://127.0.0.1:5000
+
+python web_app.py
 
 pause

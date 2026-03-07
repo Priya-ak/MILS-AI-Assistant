@@ -20,11 +20,11 @@ class AIScheduler:
 
         now = datetime.datetime.now().strftime("%H:%M")
 
+        times = sorted(self.schedule.keys())
+
         current_task = None
         next_task = None
         next_time = None
-
-        times = sorted(self.schedule.keys())
 
         for i, time in enumerate(times):
 
@@ -34,6 +34,11 @@ class AIScheduler:
                 if i + 1 < len(times):
                     next_time = times[i + 1]
                     next_task = self.schedule[next_time]
+
+        # If no next task → start tomorrow schedule
+        if next_task is None:
+            next_time = times[0]
+            next_task = self.schedule[next_time]
 
         return {
             "current_task": current_task,
