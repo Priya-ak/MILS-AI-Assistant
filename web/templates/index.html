@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MILS AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0a0b;
+      --surface: #141416;
+      --border: #27272a;
+      --muted: #71717a;
+      --text: #fafafa;
+      --accent: #22d3ee;
+      --accent-dim: #0891b2;
+      --success: #34d399;
+      --glow: rgba(34, 211, 238, 0.25);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .bg-image {
+      position: fixed;
+      inset: 0;
+      background: url('https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1920') center/cover no-repeat;
+      opacity: 0.22;
+      pointer-events: none;
+    }
+    .bg-overlay {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34,211,238,0.22), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(56,189,248,0.15), transparent),
+        radial-gradient(ellipse 50% 30% at 0% 80%, rgba(52,211,153,0.08), transparent),
+        linear-gradient(180deg, rgba(10,10,11,0.7) 0%, rgba(10,10,11,0.95) 100%);
+      pointer-events: none;
+    }
+    .floating-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+      animation: float 20s ease-in-out infinite;
+    }
+    .floating-orb.orb1 { width: 400px; height: 400px; background: rgba(34,211,238,0.25); top: -100px; right: -80px; animation-delay: 0s; }
+    .floating-orb.orb2 { width: 300px; height: 300px; background: rgba(52,211,153,0.2); bottom: -50px; left: -60px; animation-delay: -7s; }
+    .floating-orb.orb3 { width: 200px; height: 200px; background: rgba(56,189,248,0.2); top: 40%; left: 10%; animation-delay: -14s; }
+    @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(20px, -15px) scale(1.05); } 66% { transform: translate(-10px, 10px) scale(0.98); } }
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+      mix-blend-mode: soft-light;
+    }
+    .container {
+      position: relative;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding: 0.35rem 0.85rem;
+      background: rgba(34, 211, 238, 0.12);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding: 0.4rem 0.9rem;
+      background: linear-gradient(135deg, rgba(34,211,238,0.15), rgba(8,145,178,0.1));
+      border: 1px solid rgba(34,211,238,0.35);
+      border-radius: 999px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 500;
+      letter-spacing: 0.03em;
+    }
+    .header-badge::before { content: '✦'; opacity: 0.9; }
+    .camera-section {
+      background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(12,10,27,0.98));
+      border: 1px solid rgba(148,163,184,0.25);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-bottom: 1.75rem;
+      position: relative;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    }
+    .camera-wrap {
+      position: relative;
+      max-width: 860px;
+      margin: 0 auto;
+      aspect-ratio: 16/9;
+      max-height: 520px;
+      background: radial-gradient(circle at top, #020617, #020617);
+    }
+    #videoEl {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+    #canvasEl { display: none; }
+    .overlay {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      padding: 1rem 1.25rem;
+      background: linear-gradient(transparent, rgba(0,0,0,0.85));
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.75rem;
+      font-size: 0.8rem;
+    }
+    .overlay-item {
+      background: rgba(20,20,22,0.9);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+    }
+    .overlay-item span { color: var(--muted); display: block; margin-bottom: 0.2rem; }
+    .overlay-item strong { color: var(--accent); font-weight: 600; }
+    .overlay-item.decision strong { color: var(--success); }
+    .overlay.hidden { display: none; }
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 1rem;
+      background: var(--surface);
+      color: var(--muted);
+    }
+    .placeholder.hidden { display: none; }
+    .btn {
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.85rem 1.75rem;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      position: relative;
+      z-index: 3;
+    }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+      color: var(--bg);
+      box-shadow: 0 0 24px var(--glow);
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 0 32px var(--glow);
+    }
+    .btn-start { padding: 1rem 2.25rem; font-size: 1.05rem; }
+    .btn-start {
+      padding: 1rem 2.25rem;
+      font-size: 1.05rem;
+      letter-spacing: 0.02em;
+    }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: rgba(34, 211, 238, 0.08);
+    }
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 1rem;
+    }
+    .assistant-section {
+      background: radial-gradient(circle at top left, rgba(15,118,110,0.14), transparent 60%), var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 1.6rem 1.6rem 1.2rem;
+      margin-top: 1.75rem;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.55);
+    }
+    .assistant-section h2 {
+      font-size: 1.12rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .assistant-section p.prompt {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .chat-input-wrap {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    #questionInput {
+      flex: 1;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      outline: none;
+    }
+    #questionInput:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--glow); }
+    #questionInput::placeholder { color: var(--muted); }
+    #askBtn.btn { padding: 0.85rem 1.6rem; }
+    .answer-box {
+      min-height: 80px;
+      padding: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .answer-box.empty { color: var(--muted); }
+    .answer-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .btn-speak {
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .btn-speak:hover { border-color: var(--accent); background: rgba(34,211,238,0.08); }
+    .btn-speak:disabled { opacity: 0.5; cursor: not-allowed; }
+    .answer-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .answer-row .answer-box { flex: 1; }
+    .btn-speak {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--accent);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-speak:hover { border-color: var(--accent); background: rgba(34, 211, 238, 0.1); }
+    .btn-speak:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stats-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(0,0,0,0.3);
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .stats-bar strong { color: var(--accent); margin-right: 0.25rem; }
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  </style>
+</head>
+<body>
+  <div class="bg-image"></div>
+  <div class="bg-overlay"></div>
+  <div class="floating-orb orb1"></div>
+  <div class="floating-orb orb2"></div>
+  <div class="floating-orb orb3"></div>
+  <div class="grid-bg"></div>
+  <div class="container">
+    <header>
+      <h1>MILS AI Assistant</h1>
+      <p>Live camera analysis &amp; productivity insights</p>
+      <span class="header-badge">✨ Powered by AI</span>
+    </header>
+
+    <section class="camera-section">
+      <div class="camera-wrap">
+        <div class="placeholder" id="placeholder">
+          <p>Click <strong>Start camera</strong> to begin</p>
+          <button type="button" class="btn btn-primary btn-start" id="startBtn">Start camera</button>
+        </div>
+        <video id="videoEl" autoplay playsinline muted></video>
+        <canvas id="canvasEl"></canvas>
+        <div class="overlay hidden" id="overlay">
+          <div class="overlay-item"><span>Emotion</span><strong id="valEmotion">—</strong></div>
+          <div class="overlay-item"><span>Activity</span><strong id="valActivity">—</strong></div>
+          <div class="overlay-item"><span>Work</span><strong id="valWork">—</strong></div>
+          <div class="overlay-item decision"><span>Decision</span><strong id="valDecision">—</strong></div>
+        </div>
+      </div>
+      <div class="actions" id="actions" style="display: none;">
+        <button type="button" class="btn btn-secondary" id="stopBtn">Stop</button>
+      </div>
+      <div class="stats-bar" id="statsBar" style="display: none;">
+        <span><strong id="statFocus">0</strong> focus (min)</span>
+        <span><strong id="statBreak">0</strong> break (min)</span>
+        <span><strong id="statDistract">0</strong> distraction (min)</span>
+        <span><strong id="statScore">0</strong>% productivity</span>
+      </div>
+    </section>
+
+    <section class="assistant-section">
+      <h2>Ask the AI Assistant</h2>
+      <p class="prompt">Ask anything about your session (e.g. &quot;How productive was I?&quot;, &quot;What should I do next?&quot;). Use the camera first for the best answers.</p>
+      <div class="chat-input-wrap">
+        <input type="text" id="questionInput" placeholder="Type your question…" />
+        <button type="button" class="btn btn-primary" id="askBtn">Ask</button>
+      </div>
+      <div class="answer-row">
+        <div class="answer-box empty" id="answerBox">Your answer will appear here.</div>
+        <button type="button" class="btn btn-speak" id="speakBtn" title="Speak answer" disabled>
+          <span class="speak-icon">🔊</span> Speak
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const videoEl = document.getElementById('videoEl');
+    const canvasEl = document.getElementById('canvasEl');
+    const placeholder = document.getElementById('placeholder');
+    const overlay = document.getElementById('overlay');
+    const actions = document.getElementById('actions');
+    const statsBar = document.getElementById('statsBar');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const questionInput = document.getElementById('questionInput');
+    const askBtn = document.getElementById('askBtn');
+    const answerBox = document.getElementById('answerBox');
+    const speakBtn = document.getElementById('speakBtn');
+
+    let stream = null;
+    let lastAnswer = '';
+    let lastSpokenDecision = '';
+
+    function speakText(text) {
+      if (!text || typeof text !== 'string') return;
+      if (!window.speechSynthesis) return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text.trim());
+      u.rate = 0.95;
+      u.pitch = 1;
+      u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    }
+    let analyzing = false;
+    let intervalId = null;
+
+    function showOverlay(data) {
+      overlay.classList.remove('hidden');
+      document.getElementById('valEmotion').textContent = data.emotion || '—';
+      document.getElementById('valActivity').textContent = data.activity || '—';
+      document.getElementById('valWork').textContent = data.work_type || '—';
+      document.getElementById('valDecision').textContent = (data.decision || '—').slice(0, 80) + (data.decision && data.decision.length > 80 ? '…' : '');
+      document.getElementById('statFocus').textContent = data.focus_time ?? 0;
+      document.getElementById('statBreak').textContent = data.break_time ?? 0;
+      document.getElementById('statDistract').textContent = data.distraction_time ?? 0;
+      document.getElementById('statScore').textContent = (data.productivity_score ?? 0).toFixed(1);
+      if (data.decision && data.decision !== lastSpokenDecision) {
+        lastSpokenDecision = data.decision;
+        speakText(data.decision);
+      }
+    }
+
+    function captureAndAnalyze() {
+      if (!stream || !videoEl.videoWidth) return;
+      const w = videoEl.videoWidth;
+      const h = videoEl.videoHeight;
+      canvasEl.width = w;
+      canvasEl.height = h;
+      const ctx = canvasEl.getContext('2d');
+      ctx.drawImage(videoEl, 0, 0);
+      const dataUrl = canvasEl.toDataURL('image/jpeg', 0.85);
+      if (analyzing) return;
+      analyzing = true;
+      fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) return;
+          showOverlay(data);
+          statsBar.style.display = 'flex';
+        })
+        .catch(() => {})
+        .finally(() => { analyzing = false; });
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+        videoEl.srcObject = stream;
+        placeholder.classList.add('hidden');
+        actions.style.display = 'flex';
+        startBtn.disabled = true;
+        intervalId = setInterval(captureAndAnalyze, 1800);
+        setTimeout(captureAndAnalyze, 400);
+      } catch (e) {
+        alert('Could not access camera. Allow camera permission and try again.');
+      }
+    }
+
+    function stopCamera() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = null;
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      videoEl.srcObject = null;
+      placeholder.classList.remove('hidden');
+      actions.style.display = 'none';
+      overlay.classList.add('hidden');
+      statsBar.style.display = 'none';
+      startBtn.disabled = false;
+    }
+
+    startBtn.addEventListener('click', startCamera);
+    stopBtn.addEventListener('click', stopCamera);
+
+    function askQuestion() {
+      const q = questionInput.value.trim();
+      if (!q) return;
+      answerBox.textContent = 'Thinking…';
+      answerBox.classList.remove('empty');
+      askBtn.disabled = true;
+      fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      })
+        .then(r => r.json())
+        .then(data => {
+          const ans = data.answer || data.error || 'No response.';
+          answerBox.textContent = ans;
+          if (data.answer) {
+            answerBox.classList.remove('empty');
+            lastAnswer = data.answer;
+            speakBtn.disabled = false;
+            speakText(data.answer);
+          } else {
+            answerBox.classList.add('empty');
+            lastAnswer = '';
+            speakBtn.disabled = true;
+          }
+        })
+        .catch(() => {
+          answerBox.textContent = 'Request failed. Try again.';
+          answerBox.classList.add('empty');
+        })
+        .finally(() => { askBtn.disabled = false; });
+    }
+
+    askBtn.addEventListener('click', askQuestion);
+    questionInput.addEventListener('keydown', e => { if (e.key === 'Enter') askQuestion(); });
+    speakBtn.addEventListener('click', () => { if (lastAnswer) speakText(lastAnswer); });
+  </script>
+</body>
+</html>
