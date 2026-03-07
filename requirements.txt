@@ -1,10 +1,21 @@
-# Smart Scheduler / MILS AI Productivity Assistant – production dependencies
+# MILS AI Assistant Dependencies
+
 opencv-python>=4.5.0
+opencv-contrib-python>=4.5.0
 mediapipe>=0.10.0
 ultralytics>=8.0.0
-deepface>=0.0.79
+
+deepface==0.0.79
+tensorflow==2.12
+keras==2.12
+
 gtts>=2.3.0
 pygame>=2.0.0
 ollama>=0.1.0
-streamlit>=1.20.0
+
 flask>=2.3.0
+streamlit>=1.20.0
+
+numpy>=1.23
+pillow
+tqdm
