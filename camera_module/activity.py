@@ -24,7 +24,7 @@ class ActivityClassifier:
         elif "keyboard" in objects:
             activity = "typing"
 
-        elif "book" in objects and ("pen" in objects or "pencil" in objects or "cell phone" not in objects):
+        elif "book" in objects and ("pen" in objects or "pencil" in objects):
             activity = "studying"
 
         elif "book" in objects:
@@ -43,17 +43,18 @@ class ActivityClassifier:
             activity = "browsing"
 
         # -------------------------
-        # COMMUNICATION
+        # PHONE USAGE
         # -------------------------
 
-        elif "phone" in objects:
+        elif "cell phone" in objects or "phone" in objects:
+
             if posture == "standing" or motion:
                 activity = "phone_call"
             else:
                 activity = "using_phone"
 
         # -------------------------
-        # PERSONAL / BREAK
+        # FOOD / DRINK
         # -------------------------
 
         elif any(o in objects for o in ["cup", "bottle", "wine glass", "coffee"]):
@@ -62,17 +63,18 @@ class ActivityClassifier:
         elif any(o in objects for o in ["banana", "apple", "pizza", "sandwich", "cake", "donut", "orange"]):
             activity = "eating"
 
+        # -------------------------
+        # BODY MOVEMENT
+        # -------------------------
+
+        elif posture == "standing" and motion:
+            activity = "walking"
+
         elif posture == "sitting" and motion and not any(o in objects for o in ["laptop", "keyboard", "book"]):
             activity = "stretching"
 
-        elif posture == "standing" and motion and not any(o in objects for o in ["laptop", "phone"]):
-            activity = "walking"
-
-        elif posture == "sitting" and not motion and not any(o in objects for o in ["laptop", "keyboard", "book", "phone"]):
-            activity = "relaxing"
-
         # -------------------------
-        # DISTRACTION
+        # ENTERTAINMENT
         # -------------------------
 
         elif "remote" in objects:
@@ -82,36 +84,27 @@ class ActivityClassifier:
             if "laptop" not in objects and "keyboard" not in objects:
                 activity = "watching_video"
 
-        elif any(o in objects for o in ["game controller", "controller", "remote"]):
+        elif any(o in objects for o in ["game controller", "controller"]):
             activity = "gaming"
 
-        elif "phone" in objects and posture == "sitting":
-            activity = "using_phone"
-
         # -------------------------
-        # MOVEMENT / POSTURE
+        # REST
         # -------------------------
-
-        elif posture == "standing" and motion:
-            activity = "walking"
-
-        elif posture == "standing":
-            activity = "taking_break"
 
         elif posture == "lying":
             activity = "sleeping"
 
-        elif posture == "sitting" and motion:
-            if any(o in objects for o in ["laptop", "keyboard", "book"]):
-                activity = "researching"
-            else:
-                activity = "stretching"
+        elif posture == "standing":
+            activity = "taking_break"
+
+        elif posture == "sitting" and not motion:
+            activity = "relaxing"
 
         elif posture == "sitting":
             activity = "sitting"
 
         # -------------------------
-        # TIME STABILITY
+        # STABILITY FILTER
         # -------------------------
 
         if activity != self.last_activity:
@@ -120,7 +113,8 @@ class ActivityClassifier:
 
         duration = time.time() - self.activity_start
 
-        if duration > 60 and activity == "thinking":
-            activity = "idle"
+        # prevent flickering predictions
+        if duration < 2:
+            activity = self.last_activity
 
         return activity

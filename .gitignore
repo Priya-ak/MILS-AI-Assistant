@@ -1,7 +1,16 @@
-venv/
+# Python
 __pycache__/
 *.pyc
-*.pt
+
+# Virtual Environment
+venv/
+
+# Voice temp files
+*.mp3
+
+# Logs
 *.log
-sample_outputs/
-results/
+
+# OS
+.DS_Store
+Thumbs.db

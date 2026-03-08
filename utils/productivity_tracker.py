@@ -13,20 +13,20 @@ class ProductivityTracker:
 
     def update(self, activity, work_type):
 
-        current_time = time.time()
-        elapsed = current_time - self.last_update
-        self.last_update = current_time
+        now = time.time()
+        elapsed = now - self.last_update
+        self.last_update = now
 
         # Productive work
         if work_type == "organizational_work":
             self.focus_time += elapsed
 
-        # Personal / break
-        elif activity in ["drinking", "hydrating", "eating", "stretching", "taking_break", "walking", "relaxing"]:
+        # Personal break
+        elif work_type == "personal_activity":
             self.break_time += elapsed
 
-        # Distraction
-        elif activity in ["using_phone", "watching_video", "gaming"]:
+        # Neutral / distraction
+        elif work_type == "neutral":
             self.distraction_time += elapsed
 
     def get_productivity_score(self):

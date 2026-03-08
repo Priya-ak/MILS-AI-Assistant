@@ -1,0 +1,32 @@
+[
+  {
+    "task": "finish report",
+    "time": "10.45",
+    "date": "2026-03-08"
+  },
+  {
+    "task": "meeting at 12:30",
+    "time": "12:30",
+    "date": "2026-03-08"
+  },
+  {
+    "task": "meeting at 1.00",
+    "time": "1:00",
+    "date": "2026-03-08"
+  },
+  {
+    "task": "meeting at 12:30",
+    "time": "12:30",
+    "date": "2026-03-08"
+  },
+  {
+    "task": "me the video call at 12.57",
+    "time": "12:57",
+    "date": "2026-03-08"
+  },
+  {
+    "task": "the video call at 5.45",
+    "time": "5:45",
+    "date": "2026-03-08"
+  }
+]

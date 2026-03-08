@@ -1,14 +1,23 @@
 labels = {
-
-    0: "eating",
-    1: "drinking",
-    2: "reading",
-    3: "typing",
-    4: "sleeping",
-    5: "walking",
-    6: "running",
-    7: "using_phone",
-    8: "working",
-    9: "studying"
-
+0: "coding",
+1: "typing",
+2: "studying",
+3: "reading",
+4: "video_call",
+5: "researching",
+6: "note_taking",
+7: "browsing",
+8: "using_phone",
+9: "phone_call",
+10: "hydrating",
+11: "eating",
+12: "stretching",
+13: "walking",
+14: "relaxing",
+15: "watching_video",
+16: "gaming",
+17: "taking_break",
+18: "sleeping",
+19: "sitting",
+20: "idle"
 }

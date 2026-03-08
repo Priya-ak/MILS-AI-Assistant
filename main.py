@@ -2,6 +2,7 @@ import cv2
 
 from ai_assistant.qa_agent import QAAgent
 from schedular.ai_scheduler import AIScheduler
+from schedular.autonomous_scheduler import AutonomousScheduler
 
 from camera_module.posture import PostureDetector
 from camera_module.object_detector import ObjectDetector
@@ -10,8 +11,10 @@ from camera_module.activity import ActivityClassifier
 from utils.motion_detector import MotionDetector
 from utils.productivity_tracker import ProductivityTracker
 from utils.work_classifier import WorkClassifier
-from utils.voice_response import VoiceResponse
 from utils.habit_memory import HabitMemory
+
+from utils.voice_response import VoiceResponse
+from voice_agent.assistant import VoiceAssistant
 
 from emotion_module.emotion import EmotionDetector
 from prediction_engine.decision_model import DecisionModel
@@ -24,6 +27,8 @@ from planner.day_planner import DayPlanner
 # -----------------------------
 
 scheduler = AIScheduler()
+auto_scheduler = AutonomousScheduler()
+
 qa_agent = QAAgent()
 
 posture_detector = PostureDetector()
@@ -36,13 +41,16 @@ decision_model = DecisionModel()
 
 tracker = ProductivityTracker()
 work_classifier = WorkClassifier()
+
 voice = VoiceResponse()
+assistant = VoiceAssistant()
+
 planner = DayPlanner()
 habit_memory = HabitMemory()
 
 
 # -----------------------------
-# Shared Context (AI memory)
+# Shared Context
 # -----------------------------
 
 context = {
@@ -55,27 +63,39 @@ context = {
     "distraction_time": 0,
     "productivity_score": 0,
     "task": None,
+    "next_task": None,
+    "next_time": None,
     "habits": {}
 }
 
 
 # -----------------------------
-# AI Assistant Chat (runs after camera is closed)
+# AI Chat
 # -----------------------------
 
 def ask_assistant():
-    """Let user ask questions; AI answers using Ollama and session context."""
+
     while True:
+
         question = input("\nAsk Assistant ➜ ").strip()
+
         if not question:
             continue
+
         if question.lower() in ["exit", "quit"]:
             break
-        answer = qa_agent.ask(question, context)
-        print("\nAI ➜", answer)
-        voice.speak(answer)
 
+        command_response = assistant.process_command(question)
 
+        if command_response != "I did not understand that command.":
+
+            voice.speak(command_response)
+
+        else:
+
+            answer = qa_agent.ask(question, context)
+
+            voice.speak(answer)
 # -----------------------------
 # Start Camera
 # -----------------------------
@@ -95,62 +115,41 @@ while True:
         break
 
 
-    # -----------------------------
-    # Emotion Detection
-    # -----------------------------
-
+    # Emotion
     emotion = emotion_detector.detect_emotion(frame)
 
 
-    # -----------------------------
-    # Posture Detection
-    # -----------------------------
-
+    # Posture
     try:
         _, posture_label = posture_detector.detect_posture(frame)
-        posture = posture_label.lower() if isinstance(posture_label, str) else "unknown"
-    except Exception:
+        posture = posture_label.lower()
+    except:
         posture = "unknown"
 
 
-    # -----------------------------
-    # Object Detection
-    # -----------------------------
-
+    # Objects
     try:
         objects = object_detector.detect(frame)
-    except Exception:
+    except:
         objects = []
 
 
-    # -----------------------------
-    # Motion Detection
-    # -----------------------------
-
+    # Motion
     motion = motion_detector.detect_motion(frame)
 
 
-    # -----------------------------
-    # Activity Detection
-    # -----------------------------
-
+    # Activity
     activity = activity_classifier.classify(posture, objects, motion)
 
     print("Detected Objects:", objects)
     print("Activity:", activity)
 
 
-    # -----------------------------
-    # Work Classification
-    # -----------------------------
-
+    # Work type
     work_type = work_classifier.classify(activity)
 
 
-    # -----------------------------
-    # Productivity Tracking
-    # -----------------------------
-
+    # Productivity
     tracker.update(activity, work_type)
 
     stats = tracker.get_stats()
@@ -161,29 +160,36 @@ while True:
     print("Productivity Score:", stats["productivity_score"], "%")
 
 
-    # -----------------------------
-    # AI Decision Engine
-    # -----------------------------
+    # Autonomous Scheduler
+    auto_decision = auto_scheduler.check(
+        activity,
+        stats["focus_time"],
+        stats["break_time"]
+    )
 
+
+    # AI Decision
     decision = decision_model.decide(
-        activity, emotion, work_type,
+        activity,
+        emotion,
+        work_type,
         habits=context["habits"],
         posture=posture,
-        productivity_score=stats.get("productivity_score"),
-        focus_time=stats.get("focus_time", 0),
-        break_time=stats.get("break_time", 0),
-        distraction_time=stats.get("distraction_time", 0),
+        productivity_score=stats["productivity_score"],
+        focus_time=stats["focus_time"],
+        break_time=stats["break_time"],
+        distraction_time=stats["distraction_time"]
     )
+
+    if auto_decision:
+        decision = auto_decision
 
     planner.plan(decision)
 
     voice.speak(decision)
 
 
-    # -----------------------------
-    # Habit Learning
-    # -----------------------------
-
+    # Habit learning
     habit_memory.record_activity(activity)
     habit_memory.analyze_patterns()
 
@@ -192,14 +198,7 @@ while True:
     print("Learned Habits:", habits)
 
 
-    # -----------------------------
     # Scheduler
-    # -----------------------------
-
-    # -----------------------------
-# Scheduler
-# -----------------------------
-
     schedule_info = scheduler.get_current_task()
 
     task = schedule_info["current_task"]
@@ -213,14 +212,12 @@ while True:
         print("Next Task:", next_task, "at", next_time)
 
 
-    # -----------------------------
-    # Update AI Context
-    # -----------------------------
-
+    # Update context
     context["activity"] = activity
     context["emotion"] = emotion
     context["work_type"] = work_type
     context["decision"] = decision
+
     context["focus_time"] = stats["focus_time"]
     context["break_time"] = stats["break_time"]
     context["distraction_time"] = stats["distraction_time"]
@@ -229,14 +226,10 @@ while True:
     context["task"] = task
     context["next_task"] = next_task
     context["next_time"] = next_time
-
     context["habits"] = habits
 
 
-    # -----------------------------
-    # Display Info on Camera
-    # -----------------------------
-
+    # Display
     cv2.putText(frame, f"Emotion: {emotion}", (30,50),
                 cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),2)
 
@@ -249,29 +242,24 @@ while True:
     cv2.putText(frame, f"Decision: {decision}", (30,170),
                 cv2.FONT_HERSHEY_SIMPLEX,1,(0,0,255),2)
 
-
     cv2.imshow("MILS AI Assistant", frame)
-
 
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
 
 # -----------------------------
-# Cleanup camera
+# Cleanup
 # -----------------------------
 
 cap.release()
 cv2.destroyAllWindows()
 
-# -----------------------------
-# Post-camera: AI Assistant chat with Ollama
-# -----------------------------
 
 print("\n==============================")
-print(" Camera closed.")
-print(" Ask the AI assistant anything about your session.")
-print(" Type 'exit' or 'quit' to end.")
+print("Camera closed.")
+print("Ask the AI assistant anything about your session.")
+print("Type 'exit' or 'quit' to end.")
 print("==============================\n")
 
 ask_assistant()

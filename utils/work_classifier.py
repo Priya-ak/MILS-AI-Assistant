@@ -2,44 +2,43 @@ class WorkClassifier:
 
     def __init__(self):
 
-        # Organizational / productive work
+        # Productive / work related
         self.ORGANIZATIONAL_WORK = [
             "coding",
             "typing",
-            "writing",
-            "meeting",
-            "researching",
             "reading",
             "studying",
-            "presentation",
-            "discussion",
+            "researching",
             "note_taking",
-            "browsing",
             "video_call",
+            "browsing",
+            "writing",
+            "presentation",
+            "discussion"
         ]
 
-        # Personal / break / distraction
+        # Personal / break activities
         self.PERSONAL_ACTIVITY = [
             "using_phone",
             "phone_call",
-            "drinking",
             "hydrating",
+            "drinking",
             "eating",
             "stretching",
+            "walking",
             "relaxing",
             "watching_video",
             "gaming",
-            "walking",
+            "taking_break"
         ]
 
-        # Neutral / passive
+        # Neutral activities
         self.NEUTRAL_ACTIVITY = [
             "idle",
-            "thinking",
-            "taking_break",
             "sitting",
+            "thinking",
             "moving",
-            "sleeping",
+            "sleeping"
         ]
 
     def classify(self, activity):
@@ -49,10 +48,10 @@ class WorkClassifier:
         if activity in self.ORGANIZATIONAL_WORK:
             return "organizational_work"
 
-        if activity in self.PERSONAL_ACTIVITY:
+        elif activity in self.PERSONAL_ACTIVITY:
             return "personal_activity"
 
-        if activity in self.NEUTRAL_ACTIVITY:
+        elif activity in self.NEUTRAL_ACTIVITY:
             return "neutral"
 
         return "unknown"

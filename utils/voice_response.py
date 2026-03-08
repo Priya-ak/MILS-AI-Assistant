@@ -1,42 +1,78 @@
-from gtts import gTTS
+import asyncio
+import edge_tts
 import pygame
-import os
 import time
+import uuid
+import threading
 
 
 class VoiceResponse:
 
     def __init__(self):
 
+        self.voice = "en-IN-NeerjaNeural"
+
         pygame.mixer.init()
 
-        self.last_message = None
-        self.last_speak_time = 0
-        self.cooldown = 15
-        self.audio_file = "assistant_voice.mp3"
+        self.last_decision = None
+        self.last_time = 0
 
-    def speak(self, text):
+        self.speaking = False
 
-        current_time = time.time()
 
-        if text != self.last_message and (current_time - self.last_speak_time) > self.cooldown:
+    async def _generate_audio(self, text, filename):
 
-            print("Assistant:", text)
+        communicate = edge_tts.Communicate(text, self.voice)
+        await communicate.save(filename)
 
-            tts = gTTS(text=text, lang="en")
-            tts.save(self.audio_file)
 
-            pygame.mixer.music.load(self.audio_file)
-            pygame.mixer.music.play()
+    def _play_audio(self, filename):
 
-            while pygame.mixer.music.get_busy():
-                time.sleep(0.1)
+        pygame.mixer.music.load(filename)
+        pygame.mixer.music.play()
 
-            pygame.mixer.music.stop()
-            pygame.mixer.music.unload()
+        while pygame.mixer.music.get_busy():
+            pygame.time.Clock().tick(10)
 
-            if os.path.exists(self.audio_file):
-                os.remove(self.audio_file)
+        pygame.mixer.music.unload()
 
-            self.last_message = text
-            self.last_speak_time = current_time
+        self.speaking = False
+
+
+    def _speak_thread(self, decision):
+
+        filename = f"voice_{uuid.uuid4().hex}.mp3"
+
+        asyncio.run(self._generate_audio(decision, filename))
+
+        print("MILS:", decision)
+
+        self._play_audio(filename)
+
+
+    def speak(self, decision):
+
+        if not decision:
+            return
+
+        now = time.time()
+
+        if decision != self.last_decision:
+
+            self.last_decision = decision
+            self.last_time = now
+
+            if not self.speaking:
+
+                self.speaking = True
+                threading.Thread(target=self._speak_thread, args=(decision,), daemon=True).start()
+
+
+        elif now - self.last_time >= 7:
+
+            self.last_time = now
+
+            if not self.speaking:
+
+                self.speaking = True
+                threading.Thread(target=self._speak_thread, args=(decision,), daemon=True).start()

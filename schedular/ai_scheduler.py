@@ -1,44 +1,48 @@
-import datetime
+from datetime import datetime
+from utils.task_memory import TaskMemory
 
 
 class AIScheduler:
 
     def __init__(self):
 
-        self.schedule = {
-            "09:00": "Morning Planning",
-            "10:00": "Deep Work Session",
-            "11:30": "Short Break",
-            "12:00": "Research Work",
-            "13:00": "Lunch Break",
-            "14:00": "Project Development",
-            "16:00": "Learning / Study",
-            "18:00": "Daily Review"
-        }
+        self.task_memory = TaskMemory()
+
+        # default daily schedule
+        self.schedule = [
+            ("Deep Work", "12:00"),
+            ("Break", "13:00"),
+            ("Study Session", "15:00"),
+        ]
+
+    def get_current_time(self):
+        return datetime.now().strftime("%H:%M")
 
     def get_current_task(self):
 
-        now = datetime.datetime.now().strftime("%H:%M")
-
-        times = sorted(self.schedule.keys())
+        now = self.get_current_time()
 
         current_task = None
         next_task = None
         next_time = None
 
-        for i, time in enumerate(times):
+        # check stored tasks
+        tasks = self.task_memory.get_today_tasks()
 
-            if now >= time:
-                current_task = self.schedule[time]
+        for task in tasks:
+            if task["time"] <= now:
+                current_task = task["task"]
+            elif task["time"] > now and next_task is None:
+                next_task = task["task"]
+                next_time = task["time"]
 
-                if i + 1 < len(times):
-                    next_time = times[i + 1]
-                    next_task = self.schedule[next_time]
-
-        # If no next task → start tomorrow schedule
-        if next_task is None:
-            next_time = times[0]
-            next_task = self.schedule[next_time]
+        # fallback to default schedule
+        if not next_task:
+            for task, time in self.schedule:
+                if time > now:
+                    next_task = task
+                    next_time = time
+                    break
 
         return {
             "current_task": current_task,
